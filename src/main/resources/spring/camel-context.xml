@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="        http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd        http://camel.apache.org/schema/spring       https://camel.apache.org/schema/spring/camel-spring.xsd">
+    <camelContext id="camel" xmlns="http://camel.apache.org/schema/spring">
+        <dataFormats>
+            <xmljson contentTypeHeader="false"
+                forceTopLevelObject="false" id="xmljson"
+                namespaceLenient="false" removeNamespacePrefixes="false"
+                skipNamespaces="false" skipWhitespace="false" trimSpaces="false"/>
+            <json id="jack" library="Jackson"/>
+        </dataFormats>
+        <restConfiguration bindingMode="json" component="netty4-http"
+            contextPath="/rs" port="7079"/>
+        <rest id="rest-api-consultar-imagen" path="/api">
+            <get consumes="application/json" id="/api"
+                produces="application/json" uri="/consultar/imagen/v1.0">
+                <to uri="direct:consultar-imagen-route"/>
+            </get>
+        </rest>
+        <route id="consultar-imagen-route">
+            <from id="_from-consultar-imagen-route" uri="direct:consultar-imagen-route"/>
+            <log id="_log-inicio-ruta-consultar-imagen" message=":::Inicio Ruta Consultar Imagen:::"/>
+            <setProperty id="_setPropertyidRadicado" propertyName="idRadicado">
+                <simple>${header.idRadicado}</simple>
+            </setProperty>
+            <setProperty id="_PropertyDocumentNumber" propertyName="idTipoDocumento">
+                <simple>${header.idTipoDocumento}</simple>
+            </setProperty>
+            <to id="_velocitySoapConsultarImagen" uri="velocity:template/RequestSoapCONSULTAR_IMAGEN.vm"/>
+            <log id="_log-body-consultar-imagen-in-soap" message="Cuerpo entrada soap ---> ${body}"/>
+            <log id="_logNumTipDoc" message="::Numero y Tipo de Documento:: ${header.idRadicado} &amp; ${header.idTipoDocumento}"/>
+            <setHeader headerName="Content-Type" id="_setHeaderContentTypeCU">
+                <constant>text/xml;charset=UTF-8</constant>
+            </setHeader>
+            <setHeader headerName="Accept" id="_setHeaderAcceptCU">
+                <constant>text/xml;charset=UTF-8</constant>
+            </setHeader>
+            <setHeader headerName="SOAPAction" id="_setHeaderSOAPActionCU">
+                <constant>consultarImagenRadicado</constant>
+            </setHeader>
+            <setHeader headerName="CamelHttpMethod" id="_setHeaderCamelHttpMethodCU">
+                <constant>POST</constant>
+            </setHeader>
+            <log id="_log-antes-conexion" message="Iniciando conexion"/>
+            <to id="_toHttpAU" uri="https4://{{url.consultar.imagen}}?throwExceptionOnFailure=false&amp;bridgeEndpoint=true"/>
+            <marshal id="_marshal-xmltojson " ref="xmljson"/>
+            <removeHeader headerName="Accept" id="_removeHeaderAccept"/>
+            <removeHeader headerName="Content-Type" id="_removeHeaderContent-Type"/>
+            <setProperty id="_setProperty-codigo" propertyName="codigo">
+                <jsonpath>$.S:Body.ns2:ImagenRadicadoResponse.Transaccion.codigo</jsonpath>
+            </setProperty>
+            <choice id="_choice-resultado">
+                <when id="_when-resultado-ok">
+                    <simple resultType="boolean">${property.codigo} == '1'</simple>
+                    <setProperty id="_setProperty-nombreImagen" propertyName="nombreImagen">
+                        <jsonpath>$.S:Body.ns2:ImagenRadicadoResponse.ImagenRadicado.nombreImagen</jsonpath>
+                    </setProperty>
+                    <setProperty id="_setProperty-imagenEncodeBase64" propertyName="imagenEncodeBase64">
+                        <jsonpath>$.S:Body.ns2:ImagenRadicadoResponse.ImagenRadicado.imagenEncodeBase64</jsonpath>
+                    </setProperty>
+                    <to id="_velocitySoapConsultarImagenRad" uri="velocity:template/ResponseSoapCONSULTAR_IMAGEN.vm"/>
+                    <log id="_log-antes-conexion" message="body ${body}"/>
+                </when>
+                <when id="_when-resultado-ok">
+                    <simple resultType="boolean">${property.codigo} == '2'</simple>
+                    <setProperty
+                        id="_setProperty-descripcionTransaccion" propertyName="descripcionTransaccion">
+                        <jsonpath>$.S:Body.ns2:ImagenRadicadoResponse.Transaccion.descripcionTransaccion</jsonpath>
+                    </setProperty>
+                    <to id="_velocitySoapConsultarImagenRadNoData" uri="velocity:template/ResponseSoapCONSULTAR_IMAGEN_NO_DATA.vm"/>
+                </when>
+            </choice>
+            <unmarshal id="_unmarshalRequest">
+                <custom ref="jack"/>
+            </unmarshal>
+        </route>
+    </camelContext>
+</beans>

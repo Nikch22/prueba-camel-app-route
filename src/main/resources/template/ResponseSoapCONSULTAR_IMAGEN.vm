@@ -1,0 +1,8 @@
+{
+       
+		    "idRadicado": "$!exchange.properties.idRadicado",
+		    "idTipoDocumento": "$!exchange.properties.idTipoDocumento",
+		    "nombreImagen": "$!exchange.properties.nombreImagen",
+		    "imagenEncodeBase64": "$!exchange.properties.imagenEncodeBase64",
+		    "codigo":"$!exchange.properties.codigo"
+}          

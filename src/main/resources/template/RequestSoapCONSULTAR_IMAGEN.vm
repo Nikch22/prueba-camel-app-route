@@ -1,0 +1,9 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:imag="http://www.servisoft.com.co/Mercurio/Servicios/Schema/ImagenRadicado">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <imag:ImagenRadicadoRequest>
+         <idRadicado>$!exchange.properties.idRadicado</idRadicado>
+         <idTipoDocumento>$!exchange.properties.idTipoDocumento</idTipoDocumento>
+      </imag:ImagenRadicadoRequest>
+   </soapenv:Body>
+</soapenv:Envelope>

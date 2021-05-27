@@ -1,0 +1,6 @@
+{
+       
+		    "codigo":"$!exchange.properties.codigo",
+		    "descripcionTransaccion":"$!exchange.properties.descripcionTransaccion"
+          
+}
